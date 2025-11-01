@@ -20,6 +20,7 @@
         requestConcurrent: 5,
         buyMissingColors: false,
         users: [],
+        baseUrl: 'http://localhost',
     });
     const logs = ref([]);
     const loading = ref(false);
@@ -39,8 +40,8 @@
     }
 
     function url(path) {
-        if (!baseUrl.value) throw new Error('Base URL is not set.');
-        return baseUrl.value.replace(/\/$/, '') + '/' + path.replace(/^\//, '');
+        if (!settings.value.baseUrl) throw new Error('Base URL is not set.');
+        return settings.value.baseUrl.replace(/\/$/, '') + '/' + path.replace(/^\//, '');
     }
 
     async function selectImage() {
@@ -52,6 +53,11 @@
         await loadImage();
         await writeSettings();
     }
+
+    function saveBaseUrl() {
+        log(`Base URL set to ${baseUrl.value}`);
+    }
+
 
     async function loadImage() {
         if (!settings.value.image) return;
@@ -570,10 +576,12 @@
         loading.value = true;
 
         try {
-            baseUrl.value = await readInstanceBaseUrl();
+            settings.baseUrl = await readInstanceBaseUrl(); // <-- здесь
         } catch (error) {
             console.error(error);
-            baseUrl.value = 'http://localhost';
+            settings.baseUrl = 'http://localhost'; // <-- здесь
+        } finally {
+            loading.value = false;
         }
 
         try {
@@ -698,7 +706,9 @@
                         <div class="d-flex align-items-center gap-2 mb-2">
                             <i class="fa-solid fa-earth-asia"></i>
                             <div>
-                                Instance: <a href="#" @click="openURL(baseUrl)">{{ baseUrl }}</a>
+                                Instance: 
+                                <input type="text" v-model="settings.baseUrl" class="form-control form-control-sm d-inline-block" 
+                                    style="width: 300px;" :disabled="loading || running" @change="writeSettings" />
                             </div>
                         </div>
 
